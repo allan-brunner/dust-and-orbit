@@ -1,0 +1,30 @@
+# Environment & Secrets
+.env
+.env.local
+
+# Rust (Server & Shared Logic)
+**/target/
+**/*.rs.bk
+
+# WebAssembly (Shared Logic)
+shared_logic/pkg/
+
+# Client (VueJS & Vite)
+**/node_modules/
+
+client/dist/
+client/dist-ssr/
+
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+.eslintcache
+.stylelintcache
+
+# Database & Docker
+pg_data/
+mongo_data/
