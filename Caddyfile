@@ -1,4 +1,4 @@
-dustandorbit.allanbrunner.dev {
+:80 {
     handle /api/* {
         reverse_proxy backend:8080
     }
