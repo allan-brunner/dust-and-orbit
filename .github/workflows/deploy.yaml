@@ -62,6 +62,6 @@ jobs:
           username: ${{ secrets.VPS_USER }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
-            cd /dev/dust-and-orbit
+            cd ~/dev/dust-and-orbit
             git pull origin main
             make prod-up
