@@ -1,0 +1,47 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: do-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - backend
+      - frontend
+    
+  frontend:
+    image: ghcr.io/allan-brunner/dust-and-orbit/client:latest
+    container_name: do-frontend
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/allan-brunner/dust-and-orbit/server:latest
+    container_name: do-backend
+    restart: unless-stopped
+    environment:
+      - PORT=${PORT}
+      - PG_LOGIN=${PG_LOGIN}
+      - PG_PASS=${PG_PASS}
+      - PG_HOST=${PG_HOST}
+      - PG_PORT=${PG_PORT}
+      - PG_DB=${PG_DB}
+      - MONGO_LOGIN=${MONGO_LOGIN}
+      - MONGO_PASS=${MONGO_PASS}
+      - MONGO_HOST=${MONGO_HOST}
+      - MONGO_PORT=${MONGO_PORT}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mongodb:
+        condition: service_healthy
+
+volumes:
+  caddy_data:
+  caddy_config:
+  pg_data:
+  mongo_data:

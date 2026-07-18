@@ -56,8 +56,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .with_state(shared_state)
         .layer(CorsLayer::permissive());
 
-    let listener = tokio::net::TcpListener::bind(format!("127.0.0.1:{port}")).await?;
-    println!("Server running on http://127.0.0.1:{0}", port);
+    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}")).await?;
+    println!("Server running on http://0.0.0.0:{0}", port);
     axum::serve(listener, app).await?;
 
     Ok(())
@@ -69,7 +69,7 @@ async fn status_handler(State(state): State<Arc<AppState>>) -> Json<serde_json::
         .await
         .unwrap_or((0,));
 
-    let mongo_db = state.mongo_client.database("game_state");
+    let mongo_db = state.mongo_client.database("dust_and_orbit");
     let mongo_collections = mongo_db.list_collection_names().await.unwrap_or_default();
 
     let player_xp = 4500;

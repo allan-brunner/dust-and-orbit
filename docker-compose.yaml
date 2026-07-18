@@ -1,0 +1,33 @@
+services:
+  postgres:
+    image: postgres:trixie
+    container_name: do-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${PG_LOGIN:-dust_user}
+      POSTGRES_PASSWORD: ${PG_PASS:-secret_password}
+      POSTGRES_DB: ${PG_DB:-dust_db}
+    volumes:
+      - pg_data:/var/lib/postgresql/pg_dev_data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${PG_LOGIN:-dust_user} -d ${PG_DB:-dust_db}" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+  
+  mongodb:
+    image: mongo:8.2
+    container_name: do-mongo
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_LOGIN:-dust_user}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS:-secret_password}
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: [ "CMD", "mongosh", "--username", "${MONGO_LOGIN:-dust_user}", "--password", "${MONGO_PASS:-secret_password}", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping').ok", "--quiet" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
