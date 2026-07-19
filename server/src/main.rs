@@ -5,7 +5,7 @@ use axum::{
     extract::State,
 };
 use mongodb::{Client as MongoClient, options::ClientOptions};
-use sqlx::{postgres::PgPoolOptions, PgPool};
+use sqlx::{postgres::PgPoolOptions, PgPool, migrate};
 use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 use dotenvy::dotenv;
@@ -39,7 +39,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         .max_connections(5)
         .connect(&pg_url)
         .await?;
-    println!("Connected to PostgreSQL");
+    
+    migrate!("../migrations")
+        .run(&pg_pool)
+        .await
+        .expect("Failed to run migrations");
+
+    println!("Connected to PostgreSQL and database migrated!");
 
     let mongo_url = format!("mongodb://{mongo_login}:{mongo_pass}@{mongo_host}:{mongo_port}");
     let client_options = ClientOptions::parse(mongo_url).await?;
@@ -69,6 +75,12 @@ async fn status_handler(State(state): State<Arc<AppState>>) -> Json<serde_json::
         .await
         .unwrap_or((0,));
 
+    let pg_market_listings: i64 = sqlx::query_scalar!("SELECT COUNT(*) FROM market_listings")
+        .fetch_one(&state.pg_pool)
+        .await
+        .unwrap_or(Some(0))
+        .unwrap_or(0);
+
     let mongo_db = state.mongo_client.database("dust_and_orbit");
     let mongo_collections = mongo_db.list_collection_names().await.unwrap_or_default();
 
@@ -78,6 +90,7 @@ async fn status_handler(State(state): State<Arc<AppState>>) -> Json<serde_json::
     Json(serde_json::json!({
         "status": "online",
         "postgres_connected": pg_row.0 == 1,
+        "postgres_market_listings": pg_market_listings,
         "mongo_collections_found": mongo_collections.len(),
         "message": "Backend is locked and loaded!",
 

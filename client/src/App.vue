@@ -43,7 +43,7 @@ onMounted(async () => {
         <div class="db-status">
           <strong>PostgreSQL (Market):</strong> 
           <span :class="{ connected: serverStatus.postgres_connected }">
-            {{ serverStatus.postgres_connected ? 'Active' : 'Offline' }}
+            {{ serverStatus.postgres_connected ? 'Active' : 'Offline' }} ({{ serverStatus.postgres_market_listings }} listings)
           </span>
         </div>
         <div class="db-status">

@@ -16,3 +16,7 @@ test-prod:
 
 test-prod-down:
 	docker compose -f docker-compose.yaml -f docker-compose.prod.yaml -f docker-compose.local-prod.yaml down
+
+include .env
+prepare:
+	cd server && DATABASE_URL="postgres://$(PG_LOGIN):$(PG_PASS)@$(PG_HOST):$(PG_PORT)/$(PG_DB)" cargo sqlx prepare
