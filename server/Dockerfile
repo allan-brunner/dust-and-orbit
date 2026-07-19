@@ -4,6 +4,7 @@ WORKDIR /app
 
 COPY server ./server
 COPY shared_logic ./shared_logic
+COPY migrations ./migrations
 
 WORKDIR /app/server
 RUN cargo build --release
