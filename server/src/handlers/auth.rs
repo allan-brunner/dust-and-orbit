@@ -1,14 +1,15 @@
 use std::{env, sync::Arc};
+
 use axum::{Json, extract::State, http::{HeaderMap, StatusCode}, response::IntoResponse};
 use axum_extra::extract::{CookieJar, cookie::{Cookie, SameSite}};
 use chrono::{Duration, Utc};
 use jsonwebtoken::{EncodingKey, Header, encode};
-use uuid::Uuid;
+use lettre::{AsyncTransport, Message};
+use rand::RngExt; 
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
-use rand::RngExt;
 use time;
-
+use uuid::Uuid;
 use crate::state::AppState;
 
 #[derive(Deserialize)]
@@ -25,6 +26,7 @@ pub struct VerifyRequest {
 #[derive(Serialize)]
 pub struct AuthResponse {
     pub access_token: String,
+    pub username: String,
     pub message: String,
 }
 
@@ -84,7 +86,31 @@ pub async fn request_otp(
         (StatusCode::INTERNAL_SERVER_ERROR, e.to_string())
     })?;
 
-    println!("OTP for {} is {}", email, plain_code);
+    let smtp_from = env::var("SMTP_FROM").unwrap_or_else(|_| "dustandorbit@allanbrunner.dev".into());
+
+    let email_message = Message::builder()
+        .from(smtp_from.parse().unwrap())
+        .to(email.parse().unwrap())
+        .subject("Dust & Orbit - Your login code")
+        .body(format!(
+            "Hello Commander,\n\n\
+            A login attempt was made for your Dust & Orbit account.\n\n\
+            Your secure verification code is: {}\n\n\
+            This code will expire in exactly 15 minutes. If you did not request this code, please ignore this email.\n\n\
+            Safe travels,\n\
+            The Dust & Orbit Server System\n\
+            https://dust-and-orbit.allanbrunner.dev", 
+            plain_code
+        ))
+        .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, format!("Failed to build email: {}", e)))?;
+
+    if let Err(e) = state.mailer.send(email_message).await {
+        eprintln!("Failed to send email to {}: {}", email, e);
+        return Err((
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Failed to send email. Please try again later.".to_string()
+        ));
+    }
 
     Ok((StatusCode::OK, "Otp sent successfully"))
 }
@@ -121,20 +147,20 @@ pub async fn verify_otp(
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let user_record = sqlx::query!("SELECT id FROM users WHERE email = $1", email)
+    let user_record = sqlx::query!("SELECT id, username as \"username!\" FROM users WHERE email = $1", email)
         .fetch_optional(&state.pg_pool)
         .await
         .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let user_id = match user_record {
-        Some(u) => u.id,
+    let (user_id, username) = match user_record {
+        Some(u) => (u.id, u.username),
         None => {
             let new_id = Uuid::now_v7();
-            sqlx::query!("INSERT INTO users (id, email) VALUES ($1, $2) RETURNING id", new_id, email)
+            let inserted = sqlx::query!("INSERT INTO users (id, email, username) VALUES ($1, $2, 'Player-' || nextval('player_number_seq')) RETURNING id, username as \"username!\"", new_id, email)
                 .fetch_one(&state.pg_pool)
                 .await
-                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?
-                .id
+                .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
+            (inserted.id, inserted.username)
         }
     };
 
@@ -185,6 +211,7 @@ pub async fn verify_otp(
 
     let response_body = AuthResponse {
         access_token,
+        username,
         message: "Authentication successful".to_string()
     };
 
@@ -204,8 +231,9 @@ pub async fn refresh_token(
 
     let session = sqlx::query!(
         r#"
-        SELECT r.user_id
+        SELECT r.user_id, u.username as "username!"
         FROM refresh_tokens r
+        INNER JOIN users u ON u.id = r.user_id
         WHERE r.token_hash = $1 AND r.expires_at > NOW()
         "#,
         token_hash
@@ -232,6 +260,7 @@ pub async fn refresh_token(
 
     Ok(Json(AuthResponse {
         access_token,
+        username: record.username,
         message: "Token refreshed successfully".to_string()
     }))
 }

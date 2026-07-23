@@ -13,10 +13,16 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+        headers: {
+          'X-Forwarded-For': '127.0.0.1'
+        }
       },
       '/auth': {
         target: 'http://localhost:3000',
         changeOrigin: true,
+        headers: {
+          'X-Forwarded-For': '127.0.0.1'
+        }
       }
     }
   }

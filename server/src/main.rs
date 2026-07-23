@@ -3,9 +3,10 @@ mod router;
 mod state;
 
 use dotenvy::dotenv;
+use lettre::{AsyncSmtpTransport, Tokio1Executor, transport::smtp::authentication::Credentials};
 use mongodb::{options::ClientOptions, Client as MongoClient};
 use sqlx::{postgres::PgPoolOptions, migrate};
-use std::{env, sync::Arc};
+use std::{env, net::SocketAddr, sync::Arc};
 
 use crate::state::AppState;
 
@@ -44,10 +45,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mongo_client = MongoClient::with_options(client_options)?;
     println!("Connected to MongoDB");
 
+    let smtp_host = env::var("SMTP_HOST").unwrap_or_else(|_| "mail.infomaniak.com".into());
+    let smtp_username = env::var("SMTP_USERNAME").expect("SMTP_USERNAME must be set");
+    let smtp_pass = env::var("SMTP_PASSWORD").expect("SMTP_PASSWORD must be set");
+
+    let creds = Credentials::new(smtp_username, smtp_pass);
+
+    let mailer: AsyncSmtpTransport<Tokio1Executor> = AsyncSmtpTransport::<Tokio1Executor>::relay(&smtp_host)
+        .expect("Failed to build SMTP relay")
+        .credentials(creds)
+        .build();
+
     // App State & Router
     let shared_state = Arc::new(AppState {
         pg_pool,
         mongo_client,
+        mailer,
     });
 
     let app = router::create_router(shared_state);
@@ -57,7 +70,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{port}")).await?;
     
     println!("Server running on http://0.0.0.0:{0}", port);
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).await?;
 
     Ok(())
 }

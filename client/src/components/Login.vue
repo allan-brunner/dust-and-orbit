@@ -26,7 +26,8 @@
           v-model="code" 
           placeholder="123456" 
           maxlength="6"
-          required 
+          required
+          autofocus
         />
       </div>
       <button type="submit" :disabled="loading">
@@ -36,12 +37,6 @@
         Wrong email?
       </button>
     </form>
-
-    <div v-if="authStore.isAuthenticated" class="success-box">
-      <p>✅ Successfully Authenticated!</p>
-      <p><strong>Your User ID:</strong> {{ authStore.userId }}</p>
-      <button @click="authStore.logout()">Logout</button>
-    </div>
 
     <p v-if="errorMessage" class="error">{{ errorMessage }}</p>
   </div>
@@ -65,6 +60,7 @@ const handleRequestOtp = async () => {
   try {
     await authStore.requestOtp(email.value);
     stepTwo.value = true;
+
   } catch (error: any) {
     errorMessage.value = error.response?.data || "Failed to send code.";
   } finally {

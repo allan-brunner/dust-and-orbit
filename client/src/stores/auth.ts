@@ -4,7 +4,7 @@ import { api } from '../api';
 
 export const useAuthStore = defineStore('auth', () => {
     const accessToken = ref<string | null>(null);
-    const userId = ref<string | null>(null);
+    const userUsername = ref<string | null>(null);
     const isAuthenticated = ref(false);
 
     const requestOtp = async (email: string) => {
@@ -15,6 +15,7 @@ export const useAuthStore = defineStore('auth', () => {
         const response = await api.post('/auth/verify', { email, code });
 
         accessToken.value = response.data.access_token;
+        userUsername.value = response.data.username;
 
         isAuthenticated.value = true;
 
@@ -26,6 +27,7 @@ export const useAuthStore = defineStore('auth', () => {
             const response = await api.post('/auth/refresh');
 
             accessToken.value = response.data.access_token;
+            userUsername.value = response.data.username;
 
             isAuthenticated.value = true;
 
@@ -49,7 +51,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     return {
         accessToken,
-        userId,
+        userUsername,
         isAuthenticated,
         requestOtp,
         verifyOtp,

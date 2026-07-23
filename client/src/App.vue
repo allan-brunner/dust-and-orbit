@@ -57,8 +57,7 @@ onMounted(async () => {
 
       <div v-else>
         <div class="card success" style="margin-bottom: 20px; text-align: center;">
-          <h2>Welcome back, Commander!</h2>
-          <p>User ID: {{ authStore.userId }}</p>
+          <h2>Welcome back, {{ authStore.userUsername }}</h2>
           <button @click="authStore.logout()">Log Out</button>
         </div>
 
