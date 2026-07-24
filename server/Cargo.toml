@@ -21,6 +21,6 @@ sha2 = "0.11"
 rand = "0.10"
 hex = "0.4"
 time = "0.3"
-lettre = { version = "0.11", features = ["tokio1", "native-tls", "tokio1-native-tls", "builder"] }
+lettre = { version = "0.11", default-features = false, features = ["builder", "smtp-transport", "tokio1", "tokio1-rustls-tls"] }
 
 shared_logic = { path = "../shared_logic" }
