@@ -2,6 +2,9 @@
     handle /api/* {
         reverse_proxy backend:8080
     }
+    handle /auth/* {
+        reverse_proxy backend:8080
+    }
     handle /ws/* {
         reverse_proxy backend:8080
     }
