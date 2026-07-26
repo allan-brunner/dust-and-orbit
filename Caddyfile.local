@@ -1,5 +1,11 @@
-localhost {
+:80 {
     handle /api/* {
+        reverse_proxy backend:8080
+    }
+    handle /auth/* {
+        reverse_proxy backend:8080
+    }
+    handle /admin/* {
         reverse_proxy backend:8080
     }
     handle /ws/* {

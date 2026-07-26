@@ -7,7 +7,8 @@ use std::sync::Arc;
 use tower_http::cors::CorsLayer;
 
 use crate::state::AppState;
-use crate::handlers::status::status_handler;
+use crate::handlers::status::public_health_handler;
+use crate::handlers::status::admin_status_handler;
 use crate::handlers::auth::{refresh_token, request_otp, verify_otp, logout};
 
 pub fn create_router(shared_state: Arc<AppState>) -> Router {
@@ -37,12 +38,15 @@ pub fn create_router(shared_state: Arc<AppState>) -> Router {
         .allow_methods([Method::GET, Method::POST, Method::OPTIONS]);
 
     Router::new()
-        .route("/api/status", get(status_handler))
+        .route("/api/health", get(public_health_handler))
 
         // Authentication routes
         .route("/auth/refresh", post(refresh_token))
         .route("/auth/logout", post(logout))
         .nest("/auth", auth_routes)
+
+        // Admin routes
+        .route("/admin/status", get(admin_status_handler))
 
         // State and CORS layer
         .with_state(shared_state)

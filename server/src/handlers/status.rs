@@ -1,36 +1,51 @@
 use axum::{extract::State, response::Json};
-use std::sync::Arc;
-use shared_logic::calculate_level_from_xp;
+use mongodb::bson::doc;
+use serde::Serialize;
+use std::{sync::Arc, time::Instant};
 
 use crate::state::AppState;
 
-pub async fn status_handler(State(state): State<Arc<AppState>>) -> Json<serde_json::Value> {
-    let pg_row: (i32,) = sqlx::query_as("SELECT 1")
-        .fetch_one(&state.pg_pool)
+#[derive(Serialize)]
+pub struct PublicHealthResponse {
+    pub status: String,
+}
+
+pub async fn public_health_handler() -> Json<PublicHealthResponse> {
+    Json(PublicHealthResponse {
+        status: "ok".to_string(),
+    })
+}
+
+#[derive(Serialize)]
+pub struct AdminStatusResponse {
+    pub status: String,
+    pub backend_version: String,
+    pub db_postgres: String,
+    pub db_mongo: String,
+}
+
+pub async fn admin_status_handler(State(state): State<Arc<AppState>>) -> Json<AdminStatusResponse> {
+    let pg_start = Instant::now();
+    let db_postgres = match sqlx::query("SELECT 1").execute(&state.pg_pool).await {
+        Ok(_) => format!("ok ({}ms)", pg_start.elapsed().as_micros() as f64 / 1000.0),
+        Err(_) => "error".to_string(),
+    };
+
+    let mongo_start = Instant::now();
+    let db_mongo = match state
+        .mongo_client
+        .database("admin")
+        .run_command(doc! { "ping": 1 })
         .await
-        .unwrap_or((0,));
+    {
+        Ok(_) => format!("ok ({}ms)", mongo_start.elapsed().as_micros() as f64 / 1000.0),
+        Err(_) => "error".to_string(),
+    };
 
-    let pg_market_listings: i64 = sqlx::query_scalar!("SELECT COUNT(*) FROM market_listings")
-        .fetch_one(&state.pg_pool)
-        .await
-        .unwrap_or(Some(0))
-        .unwrap_or(0);
-
-    let mongo_db = state.mongo_client.database("dust_and_orbit");
-    let mongo_collections = mongo_db.list_collection_names().await.unwrap_or_default();
-
-    let player_xp = 4500;
-    let server_calculated_level = calculate_level_from_xp(player_xp);
-
-    Json(serde_json::json!({
-        "status": "online",
-        "postgres_connected": pg_row.0 == 1,
-        "postgres_market_listings": pg_market_listings,
-        "mongo_collections_found": mongo_collections.len(),
-        "message": "Backend is locked and loaded!",
-        "player_stats": {
-            "xp": player_xp,
-            "verified_level": server_calculated_level
-        }
-    }))
+    Json(AdminStatusResponse {
+        status: "ok".to_string(),
+        backend_version: env!("CARGO_PKG_VERSION").to_string(),
+        db_postgres,
+        db_mongo,
+    })
 }
