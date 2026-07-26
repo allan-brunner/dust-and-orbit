@@ -1,10 +1,10 @@
 <template>
   <div class="login-container">
-    <h2>Login / Sign Up</h2>
+    <h2>Login / Sign up</h2>
 
     <form @submit.prevent="handleRequestOtp" v-if="!stepTwo">
       <div>
-        <label>Email Address</label>
+        <label>Email address</label>
         <input 
           type="email" 
           v-model="email" 
@@ -13,14 +13,14 @@
         />
       </div>
       <button type="submit" :disabled="loading">
-        {{ loading ? 'Sending...' : 'Send Magic Code' }}
+        {{ loading ? 'Sending...' : 'Send magic code' }}
       </button>
     </form>
 
     <form @submit.prevent="handleVerifyOtp" v-else>
       <p>We sent a 6-digit code to <strong>{{ email }}</strong></p>
       <div>
-        <label>Enter Code</label>
+        <label>Enter code</label>
         <input 
           type="text" 
           v-model="code" 
