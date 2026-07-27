@@ -22,6 +22,7 @@ pub struct AdminStatusResponse {
     pub backend_version: String,
     pub db_postgres: String,
     pub db_mongo: String,
+    pub db_redis: String,
 }
 
 pub async fn admin_status_handler(State(state): State<Arc<AppState>>) -> Json<AdminStatusResponse> {
@@ -42,10 +43,19 @@ pub async fn admin_status_handler(State(state): State<Arc<AppState>>) -> Json<Ad
         Err(_) => "error".to_string(),
     };
 
+    let mut redis_conn = state.redis_manager.clone();
+    let redis_start = Instant::now();
+    
+    let db_redis = match redis::cmd("PING").query_async::<String>(&mut redis_conn).await {
+        Ok(_) => format!("ok ({}ms)", redis_start.elapsed().as_micros() as f64 / 1000.0),
+        Err(_) => "error".to_string(),
+    };
+
     Json(AdminStatusResponse {
         status: "ok".to_string(),
         backend_version: env!("CARGO_PKG_VERSION").to_string(),
         db_postgres,
         db_mongo,
+        db_redis,
     })
 }
