@@ -37,10 +37,15 @@ services:
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_FROM=${SMTP_FROM}
       - JWT_SECRET=${JWT_SECRET}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASS=${REDIS_PASS}
     depends_on:
       postgres:
         condition: service_healthy
       mongodb:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
 volumes:
@@ -48,3 +53,4 @@ volumes:
   caddy_config:
   pg_data:
   mongo_data:
+  redis_data:

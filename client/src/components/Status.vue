@@ -28,15 +28,8 @@ onMounted(async () => {
     <h3>System status: {{ statusData.status }}</h3>
     <p><strong>MongoDB:</strong> {{ statusData.db_mongo }}</p>
     <p><strong>PostgreSQL:</strong> {{ statusData.db_postgres }}</p>
+    <p><strong>Redis:</strong> {{ statusData.db_redis }}</p>
     <p><strong>API:</strong> {{ apiResponseTime }}</p>
     <p><strong>UI:</strong> v{{ appVersion }} - <strong>API:</strong> v{{ statusData.backend_version }}</p>
   </div>
 </template>
-
-<style scoped>
-ul {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
-</style>
