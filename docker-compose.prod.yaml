@@ -33,13 +33,13 @@ services:
       - MONGO_PASS=${MONGO_PASS}
       - MONGO_HOST=${MONGO_HOST}
       - MONGO_PORT=${MONGO_PORT}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PASS=${REDIS_PASS}
       - SMTP_HOST=${SMTP_HOST}
       - SMTP_USERNAME=${SMTP_USERNAME}
       - SMTP_FROM=${SMTP_FROM}
       - JWT_SECRET=${JWT_SECRET}
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT:-6379}
-      - REDIS_PASS=${REDIS_PASS}
     depends_on:
       postgres:
         condition: service_healthy
