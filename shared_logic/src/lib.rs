@@ -1,3 +1,7 @@
+pub mod world;
+pub mod entities;
+pub mod activities;
+
 pub fn calculate_level_from_xp(xp: u32) -> u32 {
     let raw_level = (xp as f64).sqrt() / 10.0;
     
