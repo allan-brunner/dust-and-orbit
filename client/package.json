@@ -25,6 +25,6 @@
     "vite-plugin-top-level-await": "^1.2.2",
     "vite-plugin-wasm": "^3.6.0",
     "vite-plugin-wasm-hmr": "^0.1.1",
-    "vue-tsc": "^3.3.8"
+    "vue-tsc": "^3.3.10"
   }
 }
